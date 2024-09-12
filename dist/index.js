@@ -1,12 +1,54 @@
 "use strict";
 (() => {
+    const re = /(\[?https:\/\/github\.com\/([^/]*?)\/([^/]*?)\/blob\/([^/]*?)\/([^#]*?)(#[^:]+?)?:embed(?::lang=([^\]:]*))?(?::h([0-9]*))?\]?)/;
     document.addEventListener("DOMContentLoaded", async () => {
         const body = document.querySelector("body");
-        const re = /(?:(?!<pre\b[^>]*>)[\s\S]*?)(\[https:\/\/github\.com\/([^/]*?)\/([^/]*?)\/blob\/([^/]*?)\/([^#]*?)(#[^:]+?)?:embed(?::lang=([^\]:]*))?(?::h([0-9]*))?\])(?:(?![\s\S]*?<\/pre>))/g;
-        const matches = [...body?.innerHTML.matchAll(re) ?? []];
-        await Promise.all(matches.map((match) => replace(match)));
+        if (!body) {
+            return;
+        }
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(body.innerHTML, 'text/html');
+        const walker = document.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
+            acceptNode(node) {
+                return re.test(node.nodeValue ?? '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+            }
+        });
+        const targetNodes = [];
+        while (walker.nextNode()) {
+            const textNode = walker.currentNode;
+            if (!textNode.nodeValue) {
+                return;
+            }
+            // 正規表現に一致する部分を見つけたら、iframeで置換する
+            if (re.test(textNode.nodeValue)) {
+                targetNodes.push(textNode);
+            }
+        }
+        for (const targetNode of targetNodes) {
+            if (!targetNode.nodeValue) {
+                continue;
+            }
+            const parentElement = targetNode.parentElement;
+            if (!parentElement || parentElement.closest('pre')) {
+                continue;
+            }
+            ;
+            const match = targetNode.nodeValue.match(re);
+            if (!match) {
+                continue;
+            }
+            ;
+            const iframe = await fetchIframe(match);
+            if (parentElement.nodeName === 'a') {
+                iframe ? parentElement.replaceWith(iframe) : '';
+                continue;
+            }
+            parentElement.removeChild(targetNode);
+            iframe ? parentElement.appendChild(iframe) : '';
+        }
+        body.innerHTML = doc.body.innerHTML;
     });
-    async function replace(match) {
+    async function fetchIframe(match) {
         const body = document.querySelector("body");
         if (!body) {
             return;
@@ -26,15 +68,14 @@
         const response = await fetch(apiUrl);
         if (!response.ok) {
             const message = response.status === 403 ? 'Forbidden' : response.status === 404 ? 'Not Found' : 'Error';
-            const ifameHTML = getIframeHTML({
+            const iframe = getIframe({
                 width: "300px",
                 height: "150px",
                 srcdocHTML: `<div>${message}</div><div><a href="${url}">${url}</a></div>`,
                 border: "1px solid #dedede",
                 borderRadius: "3px"
             });
-            body.innerHTML = body.innerHTML.replace(match[1], ifameHTML);
-            throw new Error(`GitHub Embed Response Status Error: ${response.status}`);
+            return iframe;
         }
         const json = await response.json();
         const decodedUtf8str = atob(json.content);
@@ -69,14 +110,13 @@
             path, anker, lang, size: json.size, lineMatches, lineStart, lineEnd,
             preHTML: preElement.outerHTML
         });
-        const iframeHTML = getIframeHTML({
+        return getIframe({
             srcdocHTML: html,
             height: `${(lineHeight) * displayLines + headerHeight + 4}px`,
             maxHeight: `${iframeMaxHeight}px`
         });
-        body.innerHTML = body.innerHTML.replace(match[1], iframeHTML);
     }
-    function getIframeHTML(props) {
+    function getIframe(props) {
         const iframe = document.createElement('iframe');
         iframe.srcdoc = props.srcdocHTML;
         iframe.style.border = "none";
@@ -85,7 +125,7 @@
         iframe.style.maxHeight = props.maxHeight ?? "500px";
         iframe.style.border = props.border ?? "none";
         iframe.style.borderRadius = props.borderRadius ?? "0px";
-        return iframe.outerHTML;
+        return iframe;
     }
     function getEmbedHTML(props) {
         return `
