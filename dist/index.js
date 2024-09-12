@@ -2,7 +2,7 @@
 (() => {
     document.addEventListener("DOMContentLoaded", async () => {
         const body = document.querySelector("body");
-        const re = /\[https:\/\/github\.com\/([^/]*?)\/([^/]*?)\/blob\/([^/]*?)\/([^#]*?)(#[^:]+?)?:embed(?::lang=([^\]:]*))?(?::h([0-9]*))?\]/g;
+        const re = /(?:(?!<pre\b[^>]*>)[\s\S]*?)(\[https:\/\/github\.com\/([^/]*?)\/([^/]*?)\/blob\/([^/]*?)\/([^#]*?)(#[^:]+?)?:embed(?::lang=([^\]:]*))?(?::h([0-9]*))?\])(?:(?![\s\S]*?<\/pre>))/g;
         const matches = [...body?.innerHTML.matchAll(re) ?? []];
         await Promise.all(matches.map((match) => replace(match)));
     });
@@ -11,14 +11,14 @@
         if (!body) {
             return;
         }
-        const url = match[0].replace(/^\[(.*):embed/, "$1");
-        const owner = match[1];
-        const repo = match[2];
-        const ref = match[3];
-        const path = match[4];
-        const anker = match[5];
-        const lang = match[6];
-        const height = Number(match[7]);
+        const url = match[1].replace(/^\[(.*):embed/, "$1");
+        const owner = match[2];
+        const repo = match[3];
+        const ref = match[4];
+        const path = match[5];
+        const anker = match[6];
+        const lang = match[7];
+        const height = Number(match[8]);
         const lineMatches = anker ? anker.match(/#L([0-9]+)(?:-L([0-9]*))?/) ?? false : false;
         const lineStart = lineMatches ? Number(lineMatches[1]) : false;
         const lineEnd = lineMatches ? Number(lineMatches[2]) : false;
@@ -33,7 +33,7 @@
                 border: "1px solid #dedede",
                 borderRadius: "3px"
             });
-            body.innerHTML = body.innerHTML.replace(match[0], ifameHTML);
+            body.innerHTML = body.innerHTML.replace(match[1], ifameHTML);
             throw new Error(`GitHub Embed Response Status Error: ${response.status}`);
         }
         const json = await response.json();
@@ -74,7 +74,7 @@
             height: `${(lineHeight) * displayLines + headerHeight + 4}px`,
             maxHeight: `${iframeMaxHeight}px`
         });
-        body.innerHTML = body.innerHTML.replace(match[0], iframeHTML);
+        body.innerHTML = body.innerHTML.replace(match[1], iframeHTML);
     }
     function getIframeHTML(props) {
         const iframe = document.createElement('iframe');
