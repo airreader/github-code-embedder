@@ -63,7 +63,8 @@
         const lineMatches = anker ? anker.match(/#L([0-9]+)(?:-L([0-9]*))?/) ?? false : false;
         const lineStart = lineMatches ? Number(lineMatches[1]) : false;
         const lineEnd = lineMatches ? Number(lineMatches[2]) : false;
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${ref}`;
+        //const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${ref}`
+        const apiUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path}`;
         const response = await fetch(apiUrl);
         if (!response.ok) {
             const message = response.status === 403 ? 'Forbidden' : response.status === 404 ? 'Not Found' : 'Error';
@@ -76,12 +77,14 @@
             });
             return iframe;
         }
-        const json = await response.json();
-        const decodedUtf8str = atob(json.content);
-        const NumberIterable = Array.prototype.map.call(decodedUtf8str, c => c.charCodeAt());
-        const decodedArray = new Uint8Array(NumberIterable);
-        const decoded = new TextDecoder().decode(decodedArray);
-        const lines = decoded.split("\n");
+        // const json = await response.json();
+        // const decodedUtf8str = atob(json.content);
+        // const NumberIterable = Array.prototype.map.call(decodedUtf8str, c => c.charCodeAt()) as Iterable<number>;
+        // const decodedArray: AllowSharedBufferSource = new Uint8Array(NumberIterable);
+        // const decoded = new TextDecoder().decode(decodedArray);
+        //const lines = decoded.split("\n");
+        const text = await response.text();
+        const lines = text.split("\n");
         const targetContent = lines.filter((value, index) => {
             if (!anker) {
                 return true;
@@ -106,7 +109,7 @@
         const iframeMaxHeight = height ?? 500;
         const html = getEmbedHTML({
             iframeMaxHeight, headerHeight, lineHeight, displayLines, url, owner, repo, ref,
-            path, anker, lang, size: json.size, lineMatches, lineStart, lineEnd,
+            path, anker, lang, lineMatches, lineStart, lineEnd,
             preHTML: preElement.outerHTML
         });
         return getIframe({
@@ -234,7 +237,6 @@
           <div><a class="file-link" href="${props.url}">${props.owner}/${props.repo}/${props.path}</a></div>
           <div class="meta">
             <div><span class="lang">${props.lang}</span></div>
-            <div><span class="size">${props.size}</span>byte</div>
             ${props.lineStart ? `<div>Line ${props.lineStart} ${props.lineEnd ? `to ${props.lineEnd}` : ''}</div>` : ''} 
             <div class="sha"><a href="https://github.com/${props.owner}/${props.repo}/commit/${props.ref}">${props.ref.substring(0, 7)}</a></div>
           </div>
