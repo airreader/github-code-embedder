@@ -62,7 +62,6 @@
     const lineMatches = anker ? anker.match(/#L([0-9]+)(?:-L([0-9]*))?/) ?? false : false;
     const lineStart = lineMatches ? Number(lineMatches[1]) : false;
     const lineEnd = lineMatches ? Number(lineMatches[2]) : false;
-    //const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${ref}`
     const apiUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path}`
 
     const response = await fetch(apiUrl);
@@ -78,12 +77,6 @@
       return iframe
     }
 
-    // const json = await response.json();
-    // const decodedUtf8str = atob(json.content);
-    // const NumberIterable = Array.prototype.map.call(decodedUtf8str, c => c.charCodeAt()) as Iterable<number>;
-    // const decodedArray: AllowSharedBufferSource = new Uint8Array(NumberIterable);
-    // const decoded = new TextDecoder().decode(decodedArray);
-    //const lines = decoded.split("\n");
     const text = await response.text()
     const lines = text.split("\n")
     const targetContent = lines.filter((value, index) => {
