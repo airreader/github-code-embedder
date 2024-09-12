@@ -19,7 +19,6 @@
             if (!textNode.nodeValue) {
                 return;
             }
-            // 正規表現に一致する部分を見つけたら、iframeで置換する
             if (re.test(textNode.nodeValue)) {
                 targetNodes.push(textNode);
             }
