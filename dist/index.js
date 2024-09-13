@@ -6,9 +6,7 @@
         if (!body) {
             return;
         }
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(body.innerHTML, 'text/html');
-        const walker = document.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
+        const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
             acceptNode(node) {
                 return re.test(node.nodeValue ?? '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
             }
@@ -45,7 +43,6 @@
             parentElement.removeChild(targetNode);
             iframe ? parentElement.appendChild(iframe) : '';
         }
-        body.innerHTML = doc.body.innerHTML;
     });
     async function fetchIframe(match) {
         const body = document.querySelector("body");
