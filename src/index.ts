@@ -5,10 +5,8 @@
     if(!body) {
       return;
     }
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(body.innerHTML, 'text/html');
     const walker = document.createTreeWalker(
-      doc.body,
+      body,
       NodeFilter.SHOW_TEXT,
       { 
         acceptNode(node) {
@@ -43,7 +41,6 @@
       parentElement.removeChild(targetNode);
       iframe ? parentElement.appendChild(iframe) : '';
     }
-    body.innerHTML = doc.body.innerHTML
   })
 
   async function fetchIframe(match: RegExpMatchArray) {
