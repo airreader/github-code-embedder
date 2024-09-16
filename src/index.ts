@@ -48,7 +48,7 @@
     if(!body) {
       return;
     }
-    const url = match[1].replace(/^\[(.*):embed/, "$1");
+    const url = match[1].replace(/^\[?(.*):embed/, "$1");
     const owner = match[2];
     const repo = match[3];
     const ref = match[4];
